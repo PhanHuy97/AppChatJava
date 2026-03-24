@@ -18,10 +18,10 @@ public class ChatClient {
                 PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
                 BufferedReader keyboardReader = new BufferedReader(new InputStreamReader(System.in))) {
 
-            System.out.println("Đã kết nối tới server " + serverHost + ":" + serverPort);
-            System.out.println("Hãy nhập tên người dùng khi server yêu cầu.");
+            System.out.println("Connected to server " + serverHost + ":" + serverPort);
+            System.out.println("Please enter your username when the server asks for it.");
 
-            // Luồng nhận dữ liệu từ server
+            // Thread for receiving data from the server
             Thread receiveThread = new Thread(() -> {
                 try {
                     String serverMessage;
@@ -29,13 +29,13 @@ public class ChatClient {
                         System.out.println(serverMessage);
                     }
                 } catch (IOException e) {
-                    System.out.println("Mất kết nối tới server.");
+                    System.out.println("Lost connection to the server.");
                 }
             });
 
             receiveThread.start();
 
-            // Luồng chính đọc dữ liệu từ bàn phím và gửi đi
+            // Main thread reads user input from the keyboard and sends it
             String userInput;
             while ((userInput = keyboardReader.readLine()) != null) {
                 writer.println(userInput);
@@ -52,11 +52,11 @@ public class ChatClient {
                 Thread.currentThread().interrupt();
             }
 
-            System.out.println("Client đã đóng.");
+            System.out.println("Client closed.");
         } catch (IOException e) {
-            System.out.println("Không thể kết nối tới server: " + e.getMessage());
+            System.out.println("Unable to connect to the server: " + e.getMessage());
         } catch (NumberFormatException e) {
-            System.out.println("Cổng không hợp lệ. Ví dụ chạy: java ChatClient localhost 8080");
+            System.out.println("Invalid port. Example: java ChatClient localhost 8080");
         }
     }
 }

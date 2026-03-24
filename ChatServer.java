@@ -30,11 +30,11 @@ public class ChatServer {
             try {
                 port = Integer.parseInt(args[0]);
             } catch (NumberFormatException e) {
-                System.out.println("Cổng không hợp lệ, hệ thống sẽ dùng cổng mặc định 8080.");
+                System.out.println("Invalid port. The system will use the default port 8080.");
             }
         }
 
-        System.out.println("MiniChat Server đang chạy tại cổng " + port);
+        System.out.println("MiniChat Server is running on port " + port);
 
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             while (true) {
@@ -43,13 +43,13 @@ public class ChatServer {
                 new Thread(clientHandler).start();
             }
         } catch (IOException e) {
-            System.out.println("Không thể khởi động server: " + e.getMessage());
+            System.out.println("Unable to start the server: " + e.getMessage());
         } finally {
             scheduler.shutdown();
         }
     }
 
-    // Lớp lưu thông tin của một nhóm chat
+    // Class for storing chat group information
     private static class ChatGroup {
         private final String name;
         private final String password;
@@ -78,7 +78,7 @@ public class ChatServer {
         }
     }
 
-    // Luồng xử lý riêng cho từng client
+    // Separate handler for each client
     private static class ClientHandler implements Runnable {
         private final Socket socket;
         private BufferedReader reader;
@@ -99,9 +99,9 @@ public class ChatServer {
                     return;
                 }
 
-                send("Đăng nhập thành công với tên: " + username);
+                send("Login successful with username: " + username);
                 sendHelp();
-                broadcastSystemMessage(username + " vừa kết nối vào phòng chat.", username);
+                broadcastSystemMessage(username + " has joined the chat room.", username);
 
                 String input;
                 while ((input = reader.readLine()) != null) {
@@ -113,7 +113,7 @@ public class ChatServer {
 
                     if (input.equalsIgnoreCase("exit") || input.equalsIgnoreCase("quit")
                             || input.equalsIgnoreCase("/quit") || input.equalsIgnoreCase("/exit")) {
-                        send("Bạn đã ngắt kết nối khỏi server.");
+                        send("You have disconnected from the server.");
                         break;
                     }
 
@@ -124,16 +124,16 @@ public class ChatServer {
                     }
                 }
             } catch (IOException e) {
-                System.out.println("Mất kết nối với client: " + e.getMessage());
+                System.out.println("Connection lost with client: " + e.getMessage());
             } finally {
                 disconnect();
             }
         }
 
-        // Xử lý đăng nhập và kiểm tra username không bị trùng
+        // Handle login and check for duplicate username
         private boolean login() throws IOException {
             while (true) {
-                send("Nhập tên người dùng:");
+                send("Enter username:");
                 String name = reader.readLine();
 
                 if (name == null) {
@@ -143,12 +143,12 @@ public class ChatServer {
                 name = name.trim();
 
                 if (name.isEmpty()) {
-                    send("Tên người dùng không được để trống.");
+                    send("Username must not be empty.");
                     continue;
                 }
 
                 if (name.contains(" ")) {
-                    send("Tên người dùng không được chứa khoảng trắng.");
+                    send("Username must not contain spaces.");
                     continue;
                 }
 
@@ -158,11 +158,11 @@ public class ChatServer {
                     return true;
                 }
 
-                send("Tên người dùng đã tồn tại, vui lòng nhập tên khác.");
+                send("Username already exists. Please enter another one.");
             }
         }
 
-        // Phân loại tin nhắn người dùng gửi lên
+        // Classify user messages
         private void handleChatMessage(String message) {
             if (message.startsWith("@")) {
                 sendPrivateMessage(message);
@@ -173,11 +173,11 @@ public class ChatServer {
             }
         }
 
-        // Gửi tin nhắn riêng
+        // Send private message
         private void sendPrivateMessage(String message) {
             String[] parts = message.split("\\s+", 2);
             if (parts.length < 2 || parts[0].length() == 1) {
-                send("Sai cú pháp. Ví dụ: @tenNguoiDung Xin chào");
+                send("Invalid syntax. Example: @username Hello");
                 return;
             }
 
@@ -186,21 +186,21 @@ public class ChatServer {
             ClientHandler targetClient = clients.get(targetUser);
 
             if (targetClient == null) {
-                send("Không tìm thấy người dùng: " + targetUser);
+                send("User not found: " + targetUser);
                 return;
             }
 
-            targetClient.send("[Tin nhắn riêng] " + username + ": " + content);
+            targetClient.send("[Private message] " + username + ": " + content);
             if (!targetUser.equals(username)) {
-                send("[Bạn -> " + targetUser + "] " + content);
+                send("[You -> " + targetUser + "] " + content);
             }
         }
 
-        // Gửi tin nhắn vào nhóm
+        // Send message to group
         private void sendGroupMessage(String message) {
             String[] parts = message.split("\\s+", 2);
             if (parts.length < 2 || parts[0].length() == 1) {
-                send("Sai cú pháp. Ví dụ: #tenNhom Noi dung can gui");
+                send("Invalid syntax. Example: #groupName message content");
                 return;
             }
 
@@ -209,12 +209,12 @@ public class ChatServer {
             ChatGroup group = groups.get(groupName);
 
             if (group == null) {
-                send("Nhóm không tồn tại: " + groupName);
+                send("Group does not exist: " + groupName);
                 return;
             }
 
             if (!group.getMembers().contains(username)) {
-                send("Bạn chưa tham gia nhóm: " + groupName);
+                send("You have not joined the group: " + groupName);
                 return;
             }
 
@@ -226,7 +226,7 @@ public class ChatServer {
             }
         }
 
-        // Xử lý lệnh bắt đầu bằng dấu /
+        // Handle commands starting with /
         private void handleCommand(String command) {
             String[] parts = command.trim().split("\\s+");
             String action = parts[0].toLowerCase();
@@ -260,41 +260,41 @@ public class ChatServer {
                     showMembers(parts);
                     break;
                 default:
-                    send("Lệnh không hợp lệ. Gõ /help để xem danh sách lệnh.");
+                    send("Invalid command. Type /help to see the list of commands.");
                     break;
             }
         }
 
-        // Hiển thị hướng dẫn sử dụng
+        // Show user guide
         private void sendHelp() {
-            send("===== DANH SÁCH LỆNH =====");
-            send("/help                         : Xem hướng dẫn");
-            send("/users                        : Xem danh sách người dùng đang online");
-            send("/groups                       : Xem danh sách nhóm hiện có");
-            send("/mygroups                     : Xem các nhóm bạn đang tham gia");
-            send("/createGroup tenNhom [mk]     : Tạo nhóm mới, mật khẩu là tùy chọn");
-            send("/join tenNhom [mk]            : Tham gia nhóm");
-            send("/leave tenNhom                : Rời khỏi nhóm");
-            send("/invite tenNhom tenNguoiDung  : Mời user vào nhóm");
-            send("/members tenNhom              : Xem thành viên của nhóm");
-            send("@tenNguoiDung noiDung         : Gửi tin nhắn riêng");
-            send("#tenNhom noiDung              : Gửi tin nhắn vào nhóm");
-            send("noiDung                       : Gửi tin nhắn cho tất cả mọi người");
-            send("exit hoặc /quit               : Thoát chương trình");
-            send("=============================");
+            send("===== COMMAND LIST =====");
+            send("/help                         : Show help");
+            send("/users                        : Show online users");
+            send("/groups                       : Show existing groups");
+            send("/mygroups                     : Show groups you have joined");
+            send("/createGroup groupName [pwd]  : Create a new group, password is optional");
+            send("/join groupName [pwd]         : Join a group");
+            send("/leave groupName              : Leave a group");
+            send("/invite groupName username    : Invite a user to a group");
+            send("/members groupName            : Show group members");
+            send("@username message             : Send a private message");
+            send("#groupName message            : Send a message to a group");
+            send("message                       : Send a message to everyone");
+            send("exit or /quit                 : Exit the program");
+            send("========================");
         }
 
-        // Hiển thị người dùng đang online
+        // Show online users
         private void showUsers() {
             List<String> names = new ArrayList<>(clients.keySet());
             Collections.sort(names);
-            send("Người dùng đang online: " + String.join(", ", names));
+            send("Online users: " + String.join(", ", names));
         }
 
-        // Hiển thị danh sách nhóm
+        // Show groups
         private void showGroups() {
             if (groups.isEmpty()) {
-                send("Hiện chưa có nhóm nào được tạo.");
+                send("There are currently no groups.");
                 return;
             }
 
@@ -304,14 +304,14 @@ public class ChatServer {
                 if (group.isPrivateGroup()) {
                     label += " (private)";
                 }
-                label += " - " + group.getMembers().size() + " thành viên";
+                label += " - " + group.getMembers().size() + " members";
                 info.add(label);
             }
             Collections.sort(info);
-            send("Danh sách nhóm: " + String.join(" | ", info));
+            send("Group list: " + String.join(" | ", info));
         }
 
-        // Hiển thị các nhóm mà người dùng đang tham gia
+        // Show groups the user has joined
         private void showMyGroups() {
             List<String> myGroups = new ArrayList<>();
             for (ChatGroup group : groups.values()) {
@@ -321,19 +321,19 @@ public class ChatServer {
             }
 
             if (myGroups.isEmpty()) {
-                send("Bạn chưa tham gia nhóm nào.");
+                send("You have not joined any groups.");
                 return;
             }
 
             Collections.sort(myGroups);
-            send("Các nhóm của bạn: " + String.join(", ", myGroups));
+            send("Your groups: " + String.join(", ", myGroups));
         }
 
-        // Tạo nhóm mới
+        // Create a new group
         private void createGroup(String command) {
             String[] parts = command.split("\\s+", 3);
             if (parts.length < 2) {
-                send("Sai cú pháp. Ví dụ: /createGroup javaTeam 123");
+                send("Invalid syntax. Example: /createGroup javaTeam 123");
                 return;
             }
 
@@ -345,28 +345,28 @@ public class ChatServer {
 
             ChatGroup oldGroup = groups.putIfAbsent(groupName, newGroup);
             if (oldGroup != null) {
-                send("Nhóm đã tồn tại: " + groupName);
+                send("Group already exists: " + groupName);
                 return;
             }
 
-            send("Tạo nhóm thành công: " + groupName);
-            send("Bạn đã được thêm vào nhóm ngay sau khi tạo.");
-            send("Lưu ý: sau 30 giây, nếu nhóm vẫn dưới 2 thành viên thì hệ thống sẽ tự xóa nhóm.");
+            send("Group created successfully: " + groupName);
+            send("You have been added to the group immediately after creation.");
+            send("Note: after 30 seconds, if the group still has fewer than 2 members, it will be deleted automatically.");
 
             scheduler.schedule(() -> {
                 ChatGroup currentGroup = groups.get(groupName);
                 if (currentGroup != null && currentGroup.getMembers().size() < MIN_GROUP_MEMBERS) {
                     groups.remove(groupName);
-                    notifyGroupMembers(currentGroup, "Nhóm " + groupName + " đã bị xóa do không đủ thành viên.");
+                    notifyGroupMembers(currentGroup, "Group " + groupName + " has been deleted due to insufficient members.");
                 }
             }, GROUP_CHECK_DELAY_SECONDS, TimeUnit.SECONDS);
         }
 
-        // Tham gia nhóm
+        // Join a group
         private void joinGroup(String command) {
             String[] parts = command.split("\\s+", 3);
             if (parts.length < 2) {
-                send("Sai cú pháp. Ví dụ: /join javaTeam 123");
+                send("Invalid syntax. Example: /join javaTeam 123");
                 return;
             }
 
@@ -375,29 +375,29 @@ public class ChatServer {
             ChatGroup group = groups.get(groupName);
 
             if (group == null) {
-                send("Nhóm không tồn tại: " + groupName);
+                send("Group does not exist: " + groupName);
                 return;
             }
 
             if (group.getMembers().contains(username)) {
-                send("Bạn đã là thành viên của nhóm " + groupName);
+                send("You are already a member of group " + groupName);
                 return;
             }
 
             if (!group.getPassword().equals(password)) {
-                send("Mật khẩu nhóm không đúng.");
+                send("Incorrect group password.");
                 return;
             }
 
             group.getMembers().add(username);
-            send("Tham gia nhóm thành công: " + groupName);
-            notifyGroupMembers(group, username + " vừa tham gia nhóm " + groupName + ".");
+            send("Successfully joined group: " + groupName);
+            notifyGroupMembers(group, username + " has joined group " + groupName + ".");
         }
 
-        // Rời khỏi nhóm
+        // Leave a group
         private void leaveGroup(String[] parts) {
             if (parts.length < 2) {
-                send("Sai cú pháp. Ví dụ: /leave javaTeam");
+                send("Invalid syntax. Example: /leave javaTeam");
                 return;
             }
 
@@ -405,28 +405,28 @@ public class ChatServer {
             ChatGroup group = groups.get(groupName);
 
             if (group == null) {
-                send("Nhóm không tồn tại: " + groupName);
+                send("Group does not exist: " + groupName);
                 return;
             }
 
             if (!group.getMembers().remove(username)) {
-                send("Bạn không nằm trong nhóm " + groupName);
+                send("You are not in group " + groupName);
                 return;
             }
 
-            send("Bạn đã rời khỏi nhóm: " + groupName);
-            notifyGroupMembers(group, username + " vừa rời khỏi nhóm " + groupName + ".");
+            send("You have left group: " + groupName);
+            notifyGroupMembers(group, username + " has left group " + groupName + ".");
 
             if (group.getMembers().isEmpty()) {
                 groups.remove(groupName);
-                send("Nhóm " + groupName + " đã được xóa vì không còn thành viên nào.");
+                send("Group " + groupName + " has been deleted because it has no members left.");
             }
         }
 
-        // Mời người dùng khác vào nhóm
+        // Invite another user to a group
         private void inviteUser(String[] parts) {
             if (parts.length < 3) {
-                send("Sai cú pháp. Ví dụ: /invite javaTeam an");
+                send("Invalid syntax. Example: /invite javaTeam an");
                 return;
             }
 
@@ -436,34 +436,34 @@ public class ChatServer {
             ClientHandler invitedClient = clients.get(invitee);
 
             if (group == null) {
-                send("Nhóm không tồn tại: " + groupName);
+                send("Group does not exist: " + groupName);
                 return;
             }
 
             if (!group.getMembers().contains(username)) {
-                send("Bạn phải là thành viên của nhóm mới có thể mời người khác.");
+                send("You must be a member of the group to invite others.");
                 return;
             }
 
             if (invitedClient == null) {
-                send("Không tìm thấy người dùng: " + invitee);
+                send("User not found: " + invitee);
                 return;
             }
 
             if (!group.getMembers().add(invitee)) {
-                send(invitee + " đã ở trong nhóm " + groupName);
+                send(invitee + " is already in group " + groupName);
                 return;
             }
 
-            send("Đã thêm " + invitee + " vào nhóm " + groupName);
-            invitedClient.send("Bạn được " + username + " mời vào nhóm " + groupName);
-            notifyGroupMembers(group, invitee + " vừa được thêm vào nhóm " + groupName + ".");
+            send("Added " + invitee + " to group " + groupName);
+            invitedClient.send("You have been invited by " + username + " to group " + groupName);
+            notifyGroupMembers(group, invitee + " has been added to group " + groupName + ".");
         }
 
-        // Hiển thị thành viên của một nhóm
+        // Show members of a group
         private void showMembers(String[] parts) {
             if (parts.length < 2) {
-                send("Sai cú pháp. Ví dụ: /members javaTeam");
+                send("Invalid syntax. Example: /members javaTeam");
                 return;
             }
 
@@ -471,28 +471,28 @@ public class ChatServer {
             ChatGroup group = groups.get(groupName);
 
             if (group == null) {
-                send("Nhóm không tồn tại: " + groupName);
+                send("Group does not exist: " + groupName);
                 return;
             }
 
             List<String> members = new ArrayList<>(group.getMembers());
             Collections.sort(members);
-            send("Thành viên nhóm " + groupName + ": " + String.join(", ", members));
+            send("Members of group " + groupName + ": " + String.join(", ", members));
         }
 
-        // Gửi dữ liệu về client hiện tại
+        // Send data to current client
         private synchronized void send(String message) {
             if (writer != null) {
                 writer.println(message);
             }
         }
 
-        // Ngắt kết nối và dọn dẹp dữ liệu
+        // Disconnect and clean up
         private void disconnect() {
             if (username != null) {
                 clients.remove(username);
                 removeUserFromAllGroups(username);
-                broadcastSystemMessage(username + " đã rời khỏi phòng chat.", username);
+                broadcastSystemMessage(username + " has left the chat room.", username);
             }
 
             try {
@@ -500,7 +500,7 @@ public class ChatServer {
                     reader.close();
                 }
             } catch (IOException e) {
-                System.out.println("Lỗi khi đóng reader: " + e.getMessage());
+                System.out.println("Error while closing reader: " + e.getMessage());
             }
 
             if (writer != null) {
@@ -512,12 +512,12 @@ public class ChatServer {
                     socket.close();
                 }
             } catch (IOException e) {
-                System.out.println("Lỗi khi đóng socket: " + e.getMessage());
+                System.out.println("Error while closing socket: " + e.getMessage());
             }
         }
     }
 
-    // Gửi tin nhắn cho tất cả client
+    // Send message to all clients
     private static void broadcastToAll(String message) {
         for (ClientHandler client : clients.values()) {
             client.send(message);
@@ -525,9 +525,9 @@ public class ChatServer {
         System.out.println(message);
     }
 
-    // Gửi thông báo hệ thống
+    // Send system message
     private static void broadcastSystemMessage(String message, String excludedUser) {
-        String systemMessage = "[Hệ thống] " + message;
+        String systemMessage = "[System] " + message;
         for (ClientHandler client : clients.values()) {
             if (excludedUser == null || !client.username.equals(excludedUser)) {
                 client.send(systemMessage);
@@ -536,23 +536,23 @@ public class ChatServer {
         System.out.println(systemMessage);
     }
 
-    // Gửi thông báo cho các thành viên trong nhóm
+    // Notify group members
     private static void notifyGroupMembers(ChatGroup group, String message) {
         for (String memberName : group.getMembers()) {
             ClientHandler member = clients.get(memberName);
             if (member != null) {
-                member.send("[Nhóm " + group.getName() + "] " + message);
+                member.send("[Group " + group.getName() + "] " + message);
             }
         }
     }
 
-    // Xóa user khỏi tất cả nhóm khi ngắt kết nối
+    // Remove user from all groups when disconnected
     private static void removeUserFromAllGroups(String username) {
         List<String> emptyGroups = new ArrayList<>();
 
         for (ChatGroup group : groups.values()) {
             if (group.getMembers().remove(username)) {
-                notifyGroupMembers(group, username + " đã thoát khỏi nhóm " + group.getName() + ".");
+                notifyGroupMembers(group, username + " has left group " + group.getName() + ".");
             }
             if (group.getMembers().isEmpty()) {
                 emptyGroups.add(group.getName());
